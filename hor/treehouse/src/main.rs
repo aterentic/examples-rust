@@ -17,7 +17,7 @@ struct Visitor {
 impl Visitor {
     fn new(name: &str, action: VisitorAction, age: u8) -> Self {
         Self {
-            name: name.to_lowercase(),
+            name: name.to_string(),
             action,
             age,
         }
@@ -44,7 +44,7 @@ fn whats_your_name() -> String {
     stdin()
         .read_line(&mut your_name)
         .expect("Failed to read line");
-    your_name.trim().to_lowercase()
+    your_name.trim().to_string()
 }
 
 fn main() {
@@ -62,7 +62,9 @@ fn main() {
     loop {
         println!("Hello, what's your name? (Leave empty and press ENTER to quit)");
         let name = whats_your_name();
-        let known_visitor = visitor_list.iter().find(|visitor| visitor.name == name);
+        let known_visitor = visitor_list
+            .iter()
+            .find(|visitor| visitor.name.to_lowercase() == name.to_lowercase());
         match known_visitor {
             Some(visitor) => visitor.greet_visitor(),
             None => {
