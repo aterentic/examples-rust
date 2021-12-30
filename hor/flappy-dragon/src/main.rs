@@ -18,7 +18,7 @@ impl Obstacle {
         Obstacle {
             x,
             gap_y: random.range(10, 40),
-            size: i32::max(2, 20 - score),
+            size: i32::max(2, 33 - score),
         }
     }
 
@@ -88,7 +88,7 @@ enum GameMode {
 struct State {
     player: Player,
     frame_time: f32,
-    obstacle: Obstacle,
+    obstacles: Vec<Obstacle>,
     mode: GameMode,
     score: i32,
 }
@@ -98,7 +98,7 @@ impl State {
         State {
             player: Player::new(5, 25),
             frame_time: 0.0,
-            obstacle: Obstacle::new(SCREEN_WIDTH, 0),
+            obstacles: vec![Obstacle::new(SCREEN_WIDTH, 0)],
             mode: GameMode::Menu,
             score: 0,
         }
@@ -107,7 +107,7 @@ impl State {
     fn restart(&mut self) {
         self.player = Player::new(5, 25);
         self.mode = GameMode::Playing;
-        self.obstacle = Obstacle::new(SCREEN_WIDTH, 0);
+        self.obstacles = vec![Obstacle::new(SCREEN_WIDTH, 0)];
         self.frame_time = 0.0;
         self.score = 0;
     }
@@ -140,13 +140,46 @@ impl State {
         self.player.render(ctx);
         ctx.print(0, 0, "Press SPACE to flap.");
         ctx.print(0, 1, &format!("Score: {}", self.score));
-        self.obstacle.render(ctx, self.player.x);
-        if self.player.x > self.obstacle.x {
-            self.score += 1;
-            self.obstacle = Obstacle::new(self.player.x + SCREEN_WIDTH, self.score);
+
+        for obstacle in &mut self.obstacles {
+            obstacle.render(ctx, self.player.x);
         }
-        if self.player.y > SCREEN_HEIGHT || self.obstacle.hit_obstacle(&self.player) {
-            self.mode = GameMode::End;
+
+        let before = self.obstacles.len();
+        self.obstacles
+            .retain(|obstacle| self.player.x <= obstacle.x);
+        let after = self.obstacles.len();
+
+        if after < before {
+            self.obstacles
+                .push(Obstacle::new(self.player.x + SCREEN_WIDTH, self.score));
+        }
+
+        self.score += (before - after) as i32;
+
+        for obstacle in &self.obstacles {
+            if self.player.y > SCREEN_HEIGHT || obstacle.hit_obstacle(&self.player) {
+                self.mode = GameMode::End;
+            }
+        }
+
+        if self.obstacles.len() == 1
+            && (SCREEN_WIDTH as f32 / (self.obstacles[0].x - self.player.x) as f32) > 1.25
+        {
+            self.obstacles
+                .push(Obstacle::new(self.player.x + SCREEN_WIDTH, self.score));
+        }
+        if self.obstacles.len() == 2
+            && (SCREEN_WIDTH as f32 / (self.obstacles[1].x - self.player.x) as f32) > 1.25
+        {
+            self.obstacles
+                .push(Obstacle::new(self.player.x + SCREEN_WIDTH, self.score));
+        }
+        if self.obstacles.len() == 3
+            && (SCREEN_WIDTH as f32 / (self.obstacles[2].x - self.player.x) as f32) > 1.25
+        {
+            self.obstacles
+                .push(Obstacle::new(self.player.x + SCREEN_WIDTH, self.score));
         }
     }
 
